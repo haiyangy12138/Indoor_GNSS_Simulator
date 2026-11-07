@@ -2,6 +2,8 @@
 
 [中文](#室内-gps-信号转发仿真) | [English](#english-translation-indoor-gps-signal-relay-simulation)
 
+> 本项目目前为初版，程序和文档仍可能存在问题或不足。欢迎提出问题、建议和改进意见，帮助我们不断完善。
+
 本项目提供观测值级室内转发仿真和 GPS L1 C/A 复数基带 I/Q 波形生成，帮助研究：当接收机仍按真实卫星坐标解算时，室内转发如何影响位置和速度。仿真生成的数据均为合成研究数据；用户导入的数据来源由用户自行确认。
 
 应用可以生成未补偿的伪距和多普勒观测，也可以读取用户在外部补偿后的观测，计算位置和速度。图形界面支持中文和英文，包含二维与三维定位选项。
@@ -126,6 +128,8 @@ python scripts/inspect_iq.py experiments/my_run
 # English translation: Indoor GPS Signal Relay Simulation
 
 [中文](#室内-gps-信号转发仿真) | [English](#english-translation-indoor-gps-signal-relay-simulation)
+
+> This project is an initial release, and the software and documentation may contain errors or limitations. Questions, suggestions, and contributions are welcome and will help us improve the project.
 
 This project provides observation-level indoor relay simulation and GPS L1 C/A complex-baseband I/Q generation. It supports research into position and velocity errors when a receiver still solves using real satellite coordinates. Simulated outputs are synthetic research data; the provenance of imported data must be established by the user.
 
