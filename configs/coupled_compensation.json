@@ -1,0 +1,13 @@
+{
+  "compensation": {
+    "per_prn": {
+      "3": {
+        "range_offset_m": 5.0,
+        "range_rate_mps": 0.5
+      }
+    }
+  },
+  "iq": {
+    "start_s": 0.25
+  }
+}

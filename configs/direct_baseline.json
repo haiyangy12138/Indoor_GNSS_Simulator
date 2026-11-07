@@ -1,0 +1,15 @@
+{
+  "propagation": {
+    "mode": "direct"
+  },
+  "observations": {
+    "add_noise": false
+  },
+  "receiver_clock": {
+    "bias_s": 0.0,
+    "drift_sps": 0.0
+  },
+  "iq": {
+    "enabled": false
+  }
+}

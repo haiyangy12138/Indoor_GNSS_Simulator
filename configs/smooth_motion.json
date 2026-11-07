@@ -1,0 +1,18 @@
+{
+  "time": {
+    "duration_s": 5.0
+  },
+  "trajectory": {
+    "speed_mps": 5.0,
+    "end_enu_m": [
+      20.0,
+      5.0,
+      1.0
+    ],
+    "acceleration_time_s": 0.5
+  },
+  "iq": {
+    "start_s": 0.8,
+    "duration_s": 0.05
+  }
+}

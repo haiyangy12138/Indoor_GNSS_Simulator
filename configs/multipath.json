@@ -1,0 +1,9 @@
+{
+  "multipath": {
+    "enabled": true
+  },
+  "iq": {
+    "start_s": 0.25,
+    "duration_s": 0.05
+  }
+}

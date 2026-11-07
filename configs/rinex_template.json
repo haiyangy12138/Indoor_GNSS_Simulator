@@ -1,0 +1,15 @@
+{
+  "time": {
+    "gps_week": 2190,
+    "gps_sow": 518400.0,
+    "duration_s": 2.0
+  },
+  "satellites": {
+    "source": "rinex",
+    "rinex_nav_file": "../data/raw/brdc0010.22n",
+    "count": 8
+  },
+  "iq": {
+    "enabled": false
+  }
+}
