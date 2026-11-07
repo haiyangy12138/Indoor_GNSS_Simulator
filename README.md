@@ -8,6 +8,10 @@
 
 当前版本支持：WGS84/ECEF/ENU、动态圆轨道或 GPS RINEX 2/3 广播星历、发射时刻迭代、地球自转、卫星钟差与 TGD、大气简化模型、室内链路和相干单次反射、用户轨迹、连续接收机时钟、补偿约束、相关观测噪声、参考最小二乘、C/A I/Q、可复现运行记录。
 
+## 许可证
+
+本项目采用 [MIT 许可证](LICENSE)。外部数据和第三方依赖各自适用其原有许可。
+
 ## 重要适用范围
 
 - 默认圆轨道是合成卫星，不是某日真实星座；使用 `satellites.source=rinex` 及本地 NAV 文件可换成真实广播星历。
@@ -128,6 +132,10 @@ This project provides observation-level indoor relay simulation and GPS L1 C/A c
 The application generates uncompensated pseudorange and Doppler observations or reads externally compensated observations to calculate position and velocity. Its Chinese/English graphical interface supports both 2D and 3D solutions.
 
 The current version supports WGS84/ECEF/ENU; dynamic circular orbits or GPS RINEX 2/3 broadcast ephemerides; transmit-time iteration; Earth rotation; satellite clock and TGD; simplified atmosphere; indoor links and coherent single reflections; user trajectories; a continuous receiver clock; compensation constraints; correlated observation noise; reference least squares; C/A I/Q; and reproducible run records.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). External data and third-party dependencies remain subject to their own licenses.
 
 ## Important scope and limitations
 
