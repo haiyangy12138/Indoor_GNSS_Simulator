@@ -1,0 +1,35 @@
+{
+  "time": {
+    "duration_s": 5.0
+  },
+  "trajectory": {
+    "start_enu_m": [
+      2.0,
+      2.0,
+      1.0
+    ],
+    "waypoints_enu_m": [
+      [
+        9.0,
+        2.0,
+        1.0
+      ],
+      [
+        9.0,
+        7.0,
+        1.0
+      ]
+    ],
+    "end_enu_m": [
+      18.0,
+      7.0,
+      1.0
+    ],
+    "speed_mps": 5.0,
+    "acceleration_time_s": 0.4
+  },
+  "iq": {
+    "start_s": 1.775,
+    "duration_s": 0.05
+  }
+}

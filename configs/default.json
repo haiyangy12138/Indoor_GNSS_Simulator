@@ -34,6 +34,7 @@
       5.0,
       1.0
     ],
+    "waypoints_enu_m": [],
     "start_time_s": 0.2,
     "speed_mps": 22.22222222222222,
     "acceleration_time_s": 0.0

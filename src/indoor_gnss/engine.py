@@ -128,7 +128,7 @@ class Model:
         cfg=self.cfg; tm=cfg['time']; dt=tm['observation_interval_s']; h=tm['derivative_step_s']
         times=np.arange(0.,tm['duration_s'],dt)
         distances=np.arange(0,self.trajectory.length,tm['trajectory_distance_step_m'])
-        distances=np.r_[distances,self.trajectory.length]
+        distances=np.union1d(distances,np.r_[self.trajectory.corner_distances,self.trajectory.length])
         distance_times=[self.trajectory.at_distance(d) for d in distances]
         # Convert physical trajectory epochs to receiver-clock epochs by fixed point.
         distance_clock_times=[]
@@ -138,6 +138,10 @@ class Model:
             distance_clock_times.append(rt)
         times=np.unique(np.round(np.r_[times,tm['duration_s'],distance_clock_times],12))
         times=times[(times>=0)&(times<=tm['duration_s'])]
+        distance_clock_times=np.sort(distance_clock_times)
+        nearest=np.searchsorted(distance_clock_times,times-5e-10,side='right')
+        nearest=np.minimum(nearest,len(distance_clock_times)-1)
+        distance_samples=np.abs(times-distance_clock_times[nearest])<5e-10
         n,k=len(times),len(self.channels)
         series={'t_s':times,'prn':np.array([p for p,_ in self.channels],int),
             'cn0_dbhz':np.full(k,cfg['observations']['reference_cn0_dbhz'])}
@@ -152,7 +156,7 @@ class Model:
             truth.append({'time_s':t,'gps_week':tm['gps_week']+int((tm['gps_sow']+t)//604800),
                 'gps_sow':(tm['gps_sow']+t)%604800,'x_m':user[0],'y_m':user[1],'z_m':user[2],
                 'vx_mps':vel[0],'vy_mps':vel[1],'vz_mps':vel[2],
-                'distance_sample':any(abs(t-d)<5e-10 for d in distance_clock_times)})
+                'distance_sample':bool(distance_samples[ti])})
             pi=0
             for ci,(prn,path) in enumerate(self.channels):
                 v=self.channel(t,prn,path)

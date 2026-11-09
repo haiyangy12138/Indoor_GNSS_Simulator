@@ -33,11 +33,12 @@ _FIELDS = {
     'site.height_m': ('场地原点椭球高（m）', 'WGS84 椭球高，不是自动换算后的海拔。室内 z 坐标相对此原点。'),
     'site.room_size_enu_m': ('房间尺寸 [东、北、高]（m）', '填写三个正数，如 [30, 10, 5]。轨迹和室内发射点必须在该范围内或边界上。'),
     'site.outdoor_antenna_enu_m': ('室外接收天线 [x、y、z]（m）', '室外接收天线在局部 ENU 中的位置，如 [15, 5, 8]；允许高于房间顶部。转发天空段以此点为终点。'),
-    'trajectory.start_enu_m': ('运动起点 [x、y、z]（m）', '用户直线路径起点，须位于房间内，并且不同于终点。坐标依次向东、向北、向上。'),
-    'trajectory.end_enu_m': ('运动终点 [x、y、z]（m）', '用户直线路径终点，须位于房间内。当前支持一段直线，不支持任意折线路径。'),
+    'trajectory.start_enu_m': ('运动起点 [x、y、z]（m）', '路径起点，须位于房间内。坐标依次向东、向北、向上。'),
+    'trajectory.waypoints_enu_m': ('中间路径点（m）', '按经过顺序填写房间内的 [x, y, z]，如 [[10, 5, 1], [10, 8, 1]]。相邻点须不同。填 [] 直接连接起点和终点。'),
+    'trajectory.end_enu_m': ('运动终点 [x、y、z]（m）', '路径终点，须位于房间内。设置中间路径点后可回到起点。'),
     'trajectory.start_time_s': ('开始运动时间（s）', '物理时间上的出发时刻，出发前静止在起点；应保证整个运动在总仿真时长内。'),
     'trajectory.speed_mps': ('运动巡航速度（m/s）', '须大于零。80 km/h ≈ 22.2222 m/s；70 km/h ≈ 19.4444 m/s。此参数只定义真值，不作为接收机已知速度。'),
-    'trajectory.acceleration_time_s': ('起步及制动时长（s）', '每段加速和减速各使用该时长。0 表示瞬时启停；正值须满足“速度 × 该时长 ≤ 路径长度”。'),
+    'trajectory.acceleration_time_s': ('起步及制动时长（s）', '整条路径的起步加速和终点制动各使用该时长。0 表示瞬时启停；正值须满足“速度 × 该时长 ≤ 路径总长度”。'),
     'satellites.source': ('卫星轨道来源', 'synthetic：合成圆轨道演示星座；rinex：本地 GPS RINEX 2/3 广播星历。合成轨道不是当日真实星座。'),
     'satellites.rinex_nav_file': ('RINEX 广播星历文件', '仅 rinex 来源必填。支持 GPS 或混合 RINEX 2/3 NAV 及 .gz；不支持 RINEX 4 或观测文件。留空表示不提供文件。'),
     'satellites.max_ephemeris_age_s': ('最大星历年龄（s）', '须大于零，还受广播记录有效期限制。不要单纯扩大此值来复用过期星历。'),
@@ -158,7 +159,8 @@ _VECTORS = {
     'relay.transmitters.*.position_enu_m', 'solver.initial_enu_m',
 }
 _PATHS = {'satellites.rinex_nav_file', 'iq.navigation_bits_file', 'input_observations.corrected_csv'}
-_JSON = {'relay.mapping', 'relay.transmitters', 'compensation.default', 'compensation.per_prn'}
+_JSON = {'trajectory.waypoints_enu_m', 'relay.mapping', 'relay.transmitters',
+         'compensation.default', 'compensation.per_prn'}
 
 
 def describe(path, default_value, language='zh'):

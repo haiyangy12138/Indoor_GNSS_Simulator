@@ -12,6 +12,7 @@ import numpy as np
 from . import __version__
 from .config import DEFAULT,load,configure_position_mode
 from .engine import Model
+from .geometry import Trajectory
 
 
 def json_default(x):
@@ -85,11 +86,13 @@ def run(cfg,output,command):
         model=Model(cfg)
         rows,reference,import_metadata=load_corrected_observations(imported,model)
     expected_iq=int(round(cfg['iq']['sample_rate_hz']*cfg['iq']['duration_s']))*(4 if cfg['iq']['format']=='ci16_le' else 8) if cfg['iq']['enabled'] and not imported else 0
-    length=np.linalg.norm(np.array(cfg['trajectory']['end_enu_m'])-cfg['trajectory']['start_enu_m'])
-    epochs=int(np.ceil(cfg['time']['duration_s']/cfg['time']['observation_interval_s']))+int(np.ceil(length/cfg['time']['trajectory_distance_step_m']))+3
-    satellites=len(cfg['satellites']['prns']) or cfg['satellites']['count']
-    paths=satellites*(1+len(cfg['multipath']['walls']) if cfg['multipath']['enabled'] and cfg['propagation']['mode']=='relay' else 1)
-    expected_bytes=(Path(imported).stat().st_size+len(rows)*1500+10_000_000) if imported else expected_iq+epochs*satellites*1000+epochs*paths*8*4+10_000_000
+    if imported:
+        expected_bytes=Path(imported).stat().st_size+len(rows)*1500+10_000_000
+    else:
+        epochs=Trajectory(cfg['trajectory']).epoch_upper_bound(cfg['time'])
+        satellites=len(cfg['satellites']['prns']) or cfg['satellites']['count']
+        paths=satellites*(1+len(cfg['multipath']['walls']) if cfg['multipath']['enabled'] and cfg['propagation']['mode']=='relay' else 1)
+        expected_bytes=expected_iq+epochs*satellites*1000+epochs*paths*8*4+10_000_000
     if shutil.disk_usage(parent).free<expected_bytes:
         raise ValueError(f'Insufficient free disk space; conservative estimate {expected_bytes} bytes')
     output.mkdir(parents=True)

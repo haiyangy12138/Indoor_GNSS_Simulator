@@ -10,6 +10,12 @@
 
 当前版本支持：WGS84/ECEF/ENU、动态圆轨道或 GPS RINEX 2/3 广播星历、发射时刻迭代、地球自转、卫星钟差与 TGD、大气简化模型、室内链路和相干单次反射、用户轨迹、连续接收机时钟、补偿约束、相关观测噪声、参考最小二乘、C/A I/Q、可复现运行记录。
 
+## 更新记录
+
+### 2026-11-09 · 接收机折线轨迹
+
+支持在界面或 JSON 配置中设置多个三维中间路径点。接收机按顺序经过各点，仿真按各线段的总长度计算运动时间，并在每个拐点加入采样。中间路径点填 `[]` 时沿用直线路径。可加载[折线示例配置](configs/polyline.json)试用。
+
 ## 许可证
 
 本项目采用 [MIT 许可证](LICENSE)。外部数据和第三方依赖各自适用其原有许可。
@@ -78,6 +84,7 @@ python simulate.py --config configs/default.json --position-mode 2d --height-m 1
 ## 参数与示例
 
 - `configs/default.json`：所有参数展开，30×10×5m 厂房、两发射点、80km/h、2s 仿真、每0.01s及每1m的轨迹点、50ms 动态 I/Q。
+- `configs/polyline.json`：含两个拐点的接收机轨迹示例。
 - `configs/xy_only.json`：默认场景的二维定位版本，固定 ENU 高度 1 m。
 - `configs/direct_baseline.json`：无噪声直接接收基线，检验解算正确性。
 - `configs/multipath.json`：六面墙的一次镜面反射，共同 PRN 的路径在 I/Q 中相干叠加。
@@ -85,7 +92,9 @@ python simulate.py --config configs/default.json --position-mode 2d --height-m 1
 - `configs/rinex_template.json`：真实 GPS 广播星历输入模板，需自行提供合法本地文件。
 - [参数逐项说明](docs/PARAMETERS.md)、[物理模型和局限](docs/PHYSICS.md)、[输出字段](docs/DATA_FORMAT.md)。
 
-缺省会有0.2s静止准备段，随后按80km/h沿30m直线运动。默认0s加减速时间表示匀速测量段与两端静止段拼接，端点存在速度跃变；如研究启动/制动，设正的加减速时间并相应加长路径/降低速度，必须满足 `speed_mps*acceleration_time_s <= path_length`。速度、轨迹和接收机初始化均独立配置；解算器不读取真实用户位置或虚拟卫星坐标来修正位置。
+要设置折线，请在界面“场景与轨迹”中填写起点、终点和“中间路径点（m）”，例如 `[[9, 2, 1], [9, 7, 1]]`。每组坐标按东、北、上排列，程序按输入顺序依次连接。留空列表 `[]` 表示从起点直达终点。命令行可运行 `python simulate.py --config configs/polyline.json --output experiments/polyline_demo` 试用示例。
+
+缺省会有0.2s静止准备段，随后按80km/h沿30m直线运动。默认0s加减速时间表示匀速测量段与两端静止段拼接，端点存在速度跃变；如研究启动/制动，设正的加减速时间并相应加长路径/降低速度，必须满足 `speed_mps*acceleration_time_s <= path_length`，其中 `path_length` 是各线段长度之和。折线拐点采用瞬时转向，沿程速度大小遵循同一速度曲线。速度、轨迹和接收机初始化均独立配置；解算器不读取真实用户位置或虚拟卫星坐标来修正位置。
 
 ## 项目结构
 
@@ -136,6 +145,12 @@ This project provides observation-level indoor relay simulation and GPS L1 C/A c
 The application generates uncompensated pseudorange and Doppler observations or reads externally compensated observations to calculate position and velocity. Its Chinese/English graphical interface supports both 2D and 3D solutions.
 
 The current version supports WGS84/ECEF/ENU; dynamic circular orbits or GPS RINEX 2/3 broadcast ephemerides; transmit-time iteration; Earth rotation; satellite clock and TGD; simplified atmosphere; indoor links and coherent single reflections; user trajectories; a continuous receiver clock; compensation constraints; correlated observation noise; reference least squares; C/A I/Q; and reproducible run records.
+
+## Updates
+
+### 2026-11-09 · Polyline receiver trajectories
+
+Set intermediate 3D waypoints in the interface or in a JSON configuration. The receiver visits each waypoint in order. The simulator calculates travel time from the total path length and samples the trajectory at every turn. An empty waypoint list (`[]`) keeps the straight path. Try the [polyline example configuration](configs/polyline.json).
 
 ## License
 
@@ -205,6 +220,7 @@ The package need not be installed; alternatively run `python -m pip install -e .
 ## Parameters and examples
 
 - `configs/default.json`: all parameters expanded; 30×10×5 m factory, two transmitters, 80 km/h, 2 s simulation, trajectory points every 0.01 s and 1 m, 50 ms dynamic I/Q.
+- `configs/polyline.json`: example receiver trajectory with two turns.
 - `configs/xy_only.json`: 2D positioning version of the default scene, fixed ENU height 1 m.
 - `configs/direct_baseline.json`: noise-free direct-reception baseline for checking the solution.
 - `configs/multipath.json`: one specular reflection from each of six surfaces; paths sharing a PRN are coherently summed in I/Q.
@@ -212,7 +228,9 @@ The package need not be installed; alternatively run `python -m pip install -e .
 - `configs/rinex_template.json`: real GPS broadcast-ephemeris input template; provide a valid local file.
 - [Parameter reference](docs/PARAMETERS.md), [physical models and limitations](docs/PHYSICS.md), [output fields](docs/DATA_FORMAT.md).
 
-By default there is a 0.2 s stationary preparation segment followed by 30 m of straight motion at 80 km/h. The default 0 s acceleration time joins uniform measurement motion to stationary segments at either end, producing velocity jumps. To study starting/braking, set a positive acceleration time and lengthen the path or lower the speed; `speed_mps*acceleration_time_s <= path_length` must hold. Speed, trajectory and receiver initialization are configured independently; the solver does not read true user position or virtual-satellite coordinates to correct its position.
+To set up a polyline, enter the start, end and intermediate waypoints under “Scene & trajectory”. For example, enter `[[9, 2, 1], [9, 7, 1]]` for two waypoints. Coordinates are east, north and up in metres, and the receiver visits the points in order. The empty list `[]` connects the start and end directly. Run `python simulate.py --config configs/polyline.json --output experiments/polyline_demo` to try the example.
+
+By default there is a 0.2 s stationary preparation segment followed by 30 m of straight motion at 80 km/h. The default 0 s acceleration time joins uniform measurement motion to stationary segments at either end, producing velocity jumps. To study starting/braking, set a positive acceleration time and lengthen the path or lower the speed; `speed_mps*acceleration_time_s <= path_length` must hold, where `path_length` is the sum of the segment lengths. The receiver changes direction instantaneously at each turn while maintaining the speed given by the motion profile. Speed, trajectory and receiver initialization are configured independently; the solver does not read true user position or virtual-satellite coordinates to correct its position.
 
 ## Project structure
 

@@ -31,7 +31,7 @@
 
 ## 2. `trajectory_truth.csv`
 
-每行一个合并后的历元，包含常规时间网格、等距离轨迹点和结束历元。`time_s` 对应接收机时间轴；用户真值由该时刻扣除接收机钟差后在物理时间轨迹上求值。
+每行一个合并后的历元，包含常规时间网格、按累计路程的等距离采样点、中间路径点和结束历元。`time_s` 对应接收机时间轴；用户真值由该时刻扣除接收机钟差后在物理时间轨迹上求值。
 
 | 字段 | 单位/类型 | 含义 |
 |---|---|---|
@@ -40,7 +40,7 @@
 | `gps_sow` | s | 与该标记时间对应的周内秒，归一化到 `[0,604800)`。 |
 | `x_m`, `y_m`, `z_m` | m | 用户真实 ENU 东、北、上坐标。 |
 | `vx_mps`, `vy_mps`, `vz_mps` | m/s | 真实运动速度向量。 |
-| `distance_sample` | bool | 是否为配置的等距离轨迹采样点；不是仅时间网格采样。 |
+| `distance_sample` | bool | 是否为沿程距离采样点。该标记也包含起终点及中间路径点对应的历元。 |
 
 ## 3. `observations.csv`
 
@@ -266,7 +266,7 @@ Distinguish three types of data:
 
 ## 2. `trajectory_truth.csv`
 
-Each row is a merged epoch, including the regular time grid, equidistant trajectory points and the final epoch. `time_s` refers to the receiver timeline; user truth is evaluated on the physical-time trajectory after subtracting receiver clock bias from that time.
+Each row is a merged epoch, including the regular time grid, samples at equal intervals along the path, intermediate waypoints and the final epoch. `time_s` refers to the receiver timeline; user truth is evaluated on the physical-time trajectory after subtracting receiver clock bias from that time.
 
 | Field | Unit/type | Meaning |
 |---|---|---|
@@ -275,7 +275,7 @@ Each row is a merged epoch, including the regular time grid, equidistant traject
 | `gps_sow` | s | Seconds of week for the time tag, normalized to `[0,604800)`. |
 | `x_m`, `y_m`, `z_m` | m | True user ENU east, north and up coordinates. |
 | `vx_mps`, `vy_mps`, `vz_mps` | m/s | True motion velocity vector. |
-| `distance_sample` | bool | Whether this is a configured equidistant trajectory sample, rather than only a time-grid sample. |
+| `distance_sample` | bool | Whether the epoch is a path-distance sample. This includes the start, end and intermediate waypoints. |
 
 ## 3. `observations.csv`
 

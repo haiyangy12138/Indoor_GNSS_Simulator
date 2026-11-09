@@ -94,6 +94,18 @@ class FormRoundtripTests(unittest.TestCase):
         self.app.clear_import()
         self.assertEqual(str(self.app.fields['iq.enabled']['controls'][0].cget('state')), 'normal')
 
+    def test_waypoint_editor_keeps_travel_order_across_language_switch(self):
+        field = self.app.fields['trajectory.waypoints_enu_m']
+        editor = field['controls'][0]
+        editor.delete('1.0', 'end')
+        editor.insert('1.0', '[[10, 5, 1],\n [10, 8, 1]]')
+        self.app.toggle_language()
+
+        trajectory = self.app.collect()['trajectory']
+        self.assertEqual(trajectory['waypoints_enu_m'], [[10, 5, 1], [10, 8, 1]])
+        self.assertEqual(trajectory['start_enu_m'], DEFAULT['trajectory']['start_enu_m'])
+        self.assertEqual(trajectory['end_enu_m'], DEFAULT['trajectory']['end_enu_m'])
+
     def test_save_to_new_directory_preserves_relative_input_identity(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
             base = Path(directory)

@@ -65,8 +65,8 @@ def parse_value(path, text, default_value, kind):
         return value
     if kind in ('vector', 'list', 'json'):
         value = _json(raw, path)
-        if kind in ('vector', 'list') and not isinstance(value, list):
-            _error(path, 'expected a JSON array, for example [0, 5, 1]')
+        if (kind in ('vector', 'list') or isinstance(default_value, list)) and not isinstance(value, list):
+            _error(path, 'expected a JSON array')
         if kind == 'json' and isinstance(default_value, dict) and not isinstance(value, dict):
             _error(path, 'expected a JSON object')
         return value
@@ -147,6 +147,9 @@ def _check_template(value, template, path):
                 _error(path, 'wall names must be strings')
             if len(value) != len(set(value)):
                 _error(path, 'wall names must be unique')
+        elif path == 'trajectory.waypoints_enu_m':
+            for index, waypoint in enumerate(value):
+                _check_template(waypoint, DEFAULT['trajectory']['start_enu_m'], f'{path}.{index}')
         else:
             if len(value) != len(template):
                 _error(path, f'expected {len(template)} coordinates')

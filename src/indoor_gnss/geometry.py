@@ -1,4 +1,4 @@
-"""WGS84, Earth rotation, a constant-speed path with physical dwell, specular image rays."""
+"""WGS84, Earth rotation, receiver paths with physical dwell, specular image rays."""
 import math
 import numpy as np
 
@@ -37,9 +37,16 @@ class Trajectory:
         self.cfg = cfg
         self.start = np.asarray(cfg['start_enu_m'], float)
         self.end = np.asarray(cfg['end_enu_m'], float)
-        delta = self.end-self.start
-        self.length = np.linalg.norm(delta)
-        self.direction = delta / self.length
+        points = np.asarray([self.start, *cfg.get('waypoints_enu_m', []), self.end], float)
+        segments = np.diff(points, axis=0)
+        lengths = np.linalg.norm(segments, axis=1)
+        self._segment_distances = np.r_[0., np.cumsum(lengths)]
+        if not np.all(np.isfinite(self._segment_distances)) or np.any(np.diff(self._segment_distances) <= 0):
+            raise ValueError('Consecutive trajectory points must differ and define positive, finite segment lengths')
+        self._waypoints = points[1:-1]
+        self._directions = segments / lengths[:, None]
+        self.length = float(self._segment_distances[-1])
+        self.corner_distances = self._segment_distances[1:-1]
         self.speed = cfg['speed_mps']
         self.accel_time = cfg['acceleration_time_s']
         self.depart = cfg['start_time_s']
@@ -47,16 +54,17 @@ class Trajectory:
             raise ValueError('Path too short for configured acceleration and deceleration ramps')
         self.cruise_time = (self.length-self.accel_time*self.speed)/self.speed
         self.move_duration = 2*self.accel_time+self.cruise_time
+        self._corner_times = np.array([self.at_distance(d) for d in self.corner_distances])
 
     def at(self, t):
-        """Smooth acceleration ramps use constant acceleration, continuous position/velocity."""
+        """Return position and velocity along the polyline at physical time t."""
+        if t <= self.depart:
+            return self.start.copy(), np.zeros(3)
+        if t >= self.depart+self.move_duration:
+            return self.end.copy(), np.zeros(3)
         x = t-self.depart
         a, v, tc = self.accel_time, self.speed, self.cruise_time
-        if x <= 0:
-            d, speed = 0., 0.
-        elif x >= self.move_duration:
-            d, speed = self.length, 0.
-        elif a == 0:
+        if a == 0:
             d, speed = v*x, v
         elif x < a:
             d, speed = .5*v/a*x*x, v*x/a
@@ -65,18 +73,36 @@ class Trajectory:
         else:
             z = x-a-tc
             d, speed = .5*v*a+v*tc+v*z-.5*v/a*z*z, v-v*z/a
-        return self.start+self.direction*d, self.direction*speed
+        index = np.searchsorted(self._corner_times, t, side='right')
+        # The receiver epoch grid is rounded to picoseconds. Use the outgoing
+        # segment even if that rounding puts a corner epoch slightly early.
+        if index < len(self._corner_times) and self._corner_times[index]-t <= 0.5e-12 + np.spacing(t):
+            index += 1
+        origin = self.start if index == 0 else self._waypoints[index-1]
+        offset = np.clip(d, self._segment_distances[index], self._segment_distances[index+1])
+        offset -= self._segment_distances[index]
+        direction = self._directions[index]
+        return origin+direction*offset, direction*speed
 
     def at_distance(self, distance):
-        lo, hi = self.depart, self.depart+self.move_duration
-        for _ in range(55):
-            mid = (lo+hi)/2
-            pos, _ = self.at(mid)
-            if np.dot(pos-self.start, self.direction) < distance:
-                lo = mid
-            else:
-                hi = mid
-        return (lo+hi)/2
+        """Invert the speed profile using distance along the entire path."""
+        if distance <= 0:
+            return self.depart
+        if distance >= self.length:
+            return self.depart+self.move_duration
+        a, v = self.accel_time, self.speed
+        ramp_distance = .5*v*a
+        if distance < ramp_distance:
+            return self.depart+math.sqrt(2*a*distance/v)
+        if distance > self.length-ramp_distance:
+            return self.depart+self.move_duration-math.sqrt(2*a*(self.length-distance)/v)
+        return self.depart+a+(distance-ramp_distance)/v
+
+    def epoch_upper_bound(self, time_cfg):
+        """Bound the merged time, distance and corner sampling grids."""
+        return (math.ceil(time_cfg['duration_s']/time_cfg['observation_interval_s'])
+                + math.ceil(self.length/time_cfg['trajectory_distance_step_m'])
+                + len(self.corner_distances)+3)
 
 
 def specular_image(tx, rx, axis, coordinate, room):

@@ -34,7 +34,7 @@ JSON 支持只写需要更改的普通对象字段，未指定字段保留程序
 | `time.gps_sow` | s | `345600.0` | 起始 GPS 周内秒，范围 `[0,604800)`；不自动转换 UTC/闰秒。 |
 | `time.duration_s` | s | `2.0` | 总仿真时长，必须大于零并覆盖整个运动过程和 I/Q 窗口。增加时长会增加观测数、计算量与可选 I/Q 文件量。 |
 | `time.observation_interval_s` | s | `0.01` | 常规传播/观测时间网格。I/Q 路径参数在该网格上线性插值；快速运动、多径变化时应减小并做收敛检查。建议起步 `0.001–0.02`。 |
-| `time.trajectory_distance_step_m` | m | `1.0` | 额外插入等距离轨迹点；必须大于零。会与时间网格合并，因此最终观测时间间隔可能不均匀。 |
+| `time.trajectory_distance_step_m` | m | `1.0` | 沿累计路程插入等距离轨迹采样点，步长必须大于零。等距离点、中间路径点与时间网格合并，观测时间间隔可能不均匀。 |
 | `time.derivative_step_s` | s | `0.002` | 载波路径与钟差中心差分半步长，要求 `(0,0.1)`。过小易受浮点消减影响，过大跨越运动分段；建议用 `0.001/0.002/0.005` 比较稳定性。 |
 | `site.latitude_deg` | ° | `31.2304` | WGS84 原点纬度，物理有效值 `[-90,90]`；同时用于局部旋转和大气模型。真实场景应替换为厂房位置。 |
 | `site.longitude_deg` | ° | `121.4737` | WGS84 原点经度，建议 `[-180,180]`。 |
@@ -46,11 +46,12 @@ JSON 支持只写需要更改的普通对象字段，未指定字段保留程序
 
 | 完整参数名 | 单位/类型 | 默认值 | 用途、建议与依赖 |
 |---|---|---|---|
-| `trajectory.start_enu_m` | `[m,m,m]` | `[0,5,1]` | 直线路径起点，必须位于房间内，且不同于终点。 |
-| `trajectory.end_enu_m` | `[m,m,m]` | `[30,5,1]` | 直线路径终点，必须位于房间内。未实现任意折线或 CSV 轨迹。 |
+| `trajectory.start_enu_m` | `[m,m,m]` | `[0,5,1]` | 路径起点，必须位于房间内。 |
+| `trajectory.waypoints_enu_m` | `[[m,m,m],…]` | `[]` | 可选中间路径点，按经过顺序填写。各点必须在房间内，相邻点不能重合。空列表表示直线。 |
+| `trajectory.end_enu_m` | `[m,m,m]` | `[30,5,1]` | 路径终点，必须位于房间内。设置有效中间路径点后，终点可以与起点相同。 |
 | `trajectory.start_time_s` | s | `0.2` | 物理时间上的出发时刻，出发前停留于起点。改变此值时注意 I/Q 窗口是否覆盖动态段。 |
 | `trajectory.speed_mps` | m/s | `22.2222222222` | 巡航速度，即 80 km/h，须大于零。70 km/h 对应约 `19.4444444444`。不是向接收机提供的已知速度。 |
-| `trajectory.acceleration_time_s` | s | `0.0` | 起步与停止各自的加/减速时长。零表示瞬时启停；正值使用恒加速度过渡。须非负且 `acceleration_time_s * speed_mps <= 路径长度`，完整运动须落在总时长内。 |
+| `trajectory.acceleration_time_s` | s | `0.0` | 起步与停止各自的加/减速时长。零表示瞬时启停；正值使用恒加速度过渡。须非负且 `acceleration_time_s * speed_mps <= 路径长度`。路径长度为各线段长度之和，完整运动须落在总时长内。 |
 
 ## 4. 卫星与星历
 
@@ -286,7 +287,7 @@ Minimal override example:
 | `time.gps_sow` | s | `345600.0` | Initial GPS seconds of week, `[0,604800)`; no automatic UTC/leap-second conversion. |
 | `time.duration_s` | s | `2.0` | Total duration, positive and covering all motion and the I/Q window. A longer duration increases observation count, computation and optional I/Q file size. |
 | `time.observation_interval_s` | s | `0.01` | Regular propagation/observation grid; I/Q path parameters are linearly interpolated on it. Reduce and check convergence for fast motion or changing multipath. Suggested starting range `0.001–0.02`. |
-| `time.trajectory_distance_step_m` | m | `1.0` | Inserts equally spaced trajectory points; must be positive. These merge with the time grid, so final observation intervals can be uneven. |
+| `time.trajectory_distance_step_m` | m | `1.0` | Inserts samples at equal intervals along the cumulative path length. The step must be positive. These samples and intermediate waypoints merge with the time grid, so observation intervals can be uneven. |
 | `time.derivative_step_s` | s | `0.002` | Half-step for central differences of carrier path and clock bias, `(0,0.1)`. Too small invites floating-point cancellation; too large may cross motion segments. Compare `0.001/0.002/0.005` for stability. |
 | `site.latitude_deg` | ° | `31.2304` | WGS84 origin latitude, valid `[-90,90]`; used for local rotation and atmosphere. Replace with the factory location for real scenes. |
 | `site.longitude_deg` | ° | `121.4737` | WGS84 origin longitude; recommended `[-180,180]`. |
@@ -298,11 +299,12 @@ Minimal override example:
 
 | Full parameter name | Unit/type | Default | Purpose, recommendations, and dependencies |
 |---|---|---|---|
-| `trajectory.start_enu_m` | `[m,m,m]` | `[0,5,1]` | Straight-path start, inside the room and different from the endpoint. |
-| `trajectory.end_enu_m` | `[m,m,m]` | `[30,5,1]` | Straight-path end inside the room. Arbitrary polylines or CSV trajectories are not implemented. |
+| `trajectory.start_enu_m` | `[m,m,m]` | `[0,5,1]` | Path start, inside the room. |
+| `trajectory.waypoints_enu_m` | `[[m,m,m],…]` | `[]` | Optional intermediate waypoints in visit order. All points must be inside the room and adjacent points must differ. An empty list gives a straight path. |
+| `trajectory.end_enu_m` | `[m,m,m]` | `[30,5,1]` | Path end inside the room. With valid intermediate waypoints, the end may equal the start. |
 | `trajectory.start_time_s` | s | `0.2` | Departure in physical time; stationary at the start beforehand. When changing it check that the I/Q window covers the dynamic segment. |
 | `trajectory.speed_mps` | m/s | `22.2222222222` | Positive cruise speed, 80 km/h; 70 km/h is about `19.4444444444`. It is not supplied to the receiver as known velocity. |
-| `trajectory.acceleration_time_s` | s | `0.0` | Each startup and stopping ramp duration. Zero means instantaneous start/stop; positive values use constant acceleration. Must be nonnegative and `acceleration_time_s * speed_mps <= path length`; all motion must fit in the total duration. |
+| `trajectory.acceleration_time_s` | s | `0.0` | Each startup and stopping ramp duration. Zero means instantaneous start/stop; positive values use constant acceleration. Must be nonnegative and `acceleration_time_s * speed_mps <= path length`. Path length is the sum of the segment lengths. All motion must fit in the total duration. |
 
 ## 4. Satellites and ephemerides
 

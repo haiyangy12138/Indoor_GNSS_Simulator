@@ -10,7 +10,7 @@
 
 | 页面 | 可以设置的内容 |
 |---|---|
-| 场景与轨迹 | 随机种子、GPST 时间、仿真时长、时间/距离采样间隔、场地经纬度、房间尺寸、室外天线坐标、运动起终点、速度和加减速时间 |
+| 场景与轨迹 | 随机种子、GPST 时间、仿真时长、时间/距离采样间隔、场地经纬度、房间尺寸、室外天线坐标、运动起终点、中间路径点、速度和加减速时间 |
 | 卫星与传播 | 合成/RINEX 星历、星历文件、卫星数量与 PRN、仰角、合成轨道参数、直达/转发、地球自转和传播求解参数 |
 | 室内发射点 | 1–4 个点，逐点编号、坐标、线缆、处理延迟、路径损耗、相位及独立时钟；PRN 映射、转发架构、点间距约束 |
 | 上传 / 导入数据 | 可留空的已补偿观测 CSV；清空文件、保存空白模板、可选配置轨迹对比 |
@@ -22,6 +22,8 @@
 顶部控制二维/三维及二维固定高度。关闭 Z 解算时，高度仍用于三维传播，只是不作为待求未知量。加载配置保留其维度；初次打开和“恢复默认参数”采用二维、高度 1 m。
 
 坐标输入按 x 东、y 北、z 上排列。速度单位 m/s，80 km/h 约为 22.2222 m/s；时间单位以字段说明为准。科学计数法可直接填写，如 1e-5；整数参数须填整数。卫星列表和反射墙列表使用 JSON 数组，例如 `[3, 16, 4, 10]`。
+
+在“中间路径点（m）”中按经过顺序填写坐标列表，例如 `[[9, 2, 1], [9, 7, 1]]`。接收机从起点依次经过这些点，再到终点。所有点必须在房间内，相邻点不能重合。`[]` 表示直线。也可加载 `configs/polyline.json` 试用示例。
 
 逐颗卫星映射示例：`{"3":"V1","16":"V2"}`；空对象使用默认分配。PRN 键须为字符串 `"1"` 到 `"32"`，不能写 G03 或 03。原补偿控制页已移除，应用中不再输入补偿量；你们在外部完成补偿后，导入完整伪距与多普勒。详见 [导入格式](OBSERVATION_IMPORT.md)。
 
@@ -68,7 +70,7 @@ Click the language button at the top of the interface to switch between Chinese 
 
 | Page | Available settings |
 |---|---|
-| Scene & trajectory | Random seed; GPST time; duration; time/distance sampling intervals; site latitude/longitude; room size; outdoor antenna coordinates; trajectory start and end; speed; acceleration and braking time |
+| Scene & trajectory | Random seed; GPST time; duration; time/distance sampling intervals; site latitude/longitude; room size; outdoor antenna coordinates; trajectory start, intermediate waypoints and end; speed; acceleration and braking time |
 | Satellites & propagation | Synthetic/RINEX ephemerides and file; satellite count and PRNs; elevation; synthetic orbital parameters; direct/relay mode; Earth rotation and propagation-solution parameters |
 | Indoor transmitters | 1–4 points, each with ID, coordinates, cable, processing delay, path loss, phase and independent clock; PRN mapping, relay architecture and spacing constraints |
 | Import observations | Optional corrected-observation CSV; clear file selection; save empty template; optional comparison to configured trajectory |
@@ -80,6 +82,8 @@ Click the language button at the top of the interface to switch between Chinese 
 The controls at the top set 2D/3D and fixed height for 2D. When Z is not solved, height is still used in 3D propagation but is not an unknown in the solution. Loading a configuration preserves its dimension; on first launch or when restoring defaults the application uses 2D at 1 m height.
 
 Coordinate inputs are x east, y north, z up. Speed is in m/s; 80 km/h is approximately 22.2222 m/s. See each field for time units. Scientific notation such as 1e-5 is accepted; integer parameters require integers. Satellite and reflecting-wall lists use JSON arrays, for example `[3, 16, 4, 10]`.
+
+Enter intermediate waypoints as a list of coordinates in visit order, for example `[[9, 2, 1], [9, 7, 1]]`. The receiver visits them in order between the start and end. All points must be inside the room, and adjacent points must differ. The empty list `[]` gives a straight path. Load `configs/polyline.json` to try the example.
 
 Example per-satellite mapping: `{"3":"V1","16":"V2"}`. An empty object uses default assignment. PRN keys must be strings `"1"` through `"32"`, not G03 or 03. The old compensation page has been removed: compensation values are no longer entered in the app. After compensation externally, import full pseudorange and Doppler values. See the [import format](OBSERVATION_IMPORT.md).
 

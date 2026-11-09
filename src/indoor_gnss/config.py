@@ -14,7 +14,7 @@ DEFAULT = {
             'trajectory_distance_step_m':1.,'derivative_step_s':.002},
     'site':{'latitude_deg':31.2304,'longitude_deg':121.4737,'height_m':10.,'room_size_enu_m':[30.,10.,5.],
             'outdoor_antenna_enu_m':[15.,5.,8.]},
-    'trajectory':{'start_enu_m':[0.,5.,1.],'end_enu_m':[30.,5.,1.],'start_time_s':.2,
+    'trajectory':{'start_enu_m':[0.,5.,1.],'end_enu_m':[30.,5.,1.],'waypoints_enu_m':[],'start_time_s':.2,
                   'speed_mps':80/3.6,'acceleration_time_s':0.},
     'satellites':{'source':'synthetic','rinex_nav_file':None,'max_ephemeris_age_s':14400.,
         'allow_unhealthy':False,'count':8,'prns':[],'elevation_mask_deg':5.,
@@ -135,15 +135,23 @@ def validate(cfg):
             'Explicit GPS PRNs must be integers 1..32')
     require(cfg['propagation']['mode'] in ('direct','relay'),'propagation.mode must be direct or relay')
     require(cfg['relay']['architecture'] in ('transparent','regenerative'),'Invalid relay architecture')
-    require(cfg['trajectory']['speed_mps']>0 and cfg['trajectory']['acceleration_time_s']>=0,'Invalid trajectory speed/ramp')
+    motion=cfg['trajectory']
+    require(motion['speed_mps']>0 and motion['acceleration_time_s']>=0,'Invalid trajectory speed/ramp')
     room=np.asarray(cfg['site']['room_size_enu_m'],float)
     require(room.shape==(3,) and np.all(room>0),'Room must have 3 positive dimensions')
     for name in ['start_enu_m','end_enu_m']:
-        x=np.asarray(cfg['trajectory'][name],float)
+        x=np.asarray(motion[name],float)
         require(x.shape==(3,) and np.all((x>=0)&(x<=room)),f'trajectory.{name} must be inside room')
-    require(np.linalg.norm(np.array(cfg['trajectory']['end_enu_m'])-cfg['trajectory']['start_enu_m'])>0,'Trajectory must have nonzero length')
-    traj=Trajectory(cfg['trajectory'])
-    estimated_epochs=int(np.ceil(t['duration_s']/t['observation_interval_s']))+int(np.ceil(traj.length/t['trajectory_distance_step_m']))+3
+    waypoints=motion.get('waypoints_enu_m',[])
+    require(isinstance(waypoints,list),'trajectory.waypoints_enu_m must be a list of [east, north, up] points')
+    for index,point in enumerate(waypoints):
+        name=f'trajectory.waypoints_enu_m[{index}]'
+        require(isinstance(point,list) and len(point)==3 and
+                all(isinstance(value,(int,float)) and not isinstance(value,bool) for value in point),
+                f'{name} must contain three numeric coordinates [east, north, up]')
+        require(np.all((np.asarray(point)>=0)&(np.asarray(point)<=room)),f'{name} must be inside room')
+    traj=Trajectory(motion)
+    estimated_epochs=traj.epoch_upper_bound(t)
     require(estimated_epochs<=200000,'Estimated epoch count exceeds 200000; increase sampling intervals or split the run')
     require(int(np.ceil((t['duration_s']+.4)/cfg['receiver_clock']['clock_grid_s']))<=2000000,
             'Clock process grid exceeds 2000000 points; increase clock_grid_s or split the run')

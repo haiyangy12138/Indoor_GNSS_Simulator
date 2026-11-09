@@ -25,8 +25,8 @@ GPS 卫星 S_i → 室外接收天线 A → 线缆/处理设备 → 室内发射
 - WGS84 原点转换到 ECEF，再用该点的 ENU 旋转矩阵进行局部与全球坐标转换。将厂房视为几十米尺度的欧氏长方体。
 - `time.gps_week` 是完整 GPS 周，`gps_sow` 是 GPS 周内秒，二者采用 GPST。输入不是 UTC，程序不自动处理用户提供的 UTC 日期或闰秒转换。
 - `time_s` 是从配置起始历元算起的接收机时钟时间。程序按 `physical = time_s - receiver_clock_m(time_s)/c` 得到用于轨迹和传播的近似物理时间。这是一阶时钟映射，适用于小钟差/小相对钟漂，不是广义相对论时钟积分模型。
-- 用户仅支持一段直线路径：出发前与终点后静止；`acceleration_time_s=0` 时出发和停止存在瞬时速度跳变。正值时使用恒加速度起步、匀速和恒减速度停止，速度连续，加速度在分段边界仍不连续。
-- `observation_interval_s` 定义常规时间网格；程序还插入每隔 `trajectory_distance_step_m` 的路径点对应时刻，两种网格合并后并非严格等间隔。末端静止时刻和路径点可同时出现。
+- 接收机沿起点、各中间路径点、终点依次连接形成的折线移动。以各线段长度之和作为总路程，速度曲线按累计路程映射到各线段的位置。出发前与到达后静止。`acceleration_time_s=0` 时瞬时启停；正值时使用恒加速度起步、匀速和恒减速度停止。中间拐点的位置和速度大小连续，速度方向瞬时改变，模型未包含转弯半径或停车过程。
+- `observation_interval_s` 定义常规时间网格；程序再插入按累计路程每隔 `trajectory_distance_step_m` 的采样时刻和各中间路径点的到达时刻。合并后的时刻未必等间隔。
 
 默认用户速度为 80/3.6 m/s，30 m 的无加速运动持续 1.35 s。这是仿真真值设定，不代表接收机已达到对应输出率或跟踪能力。
 
@@ -149,7 +149,7 @@ D(t) = -range_rate(t)/lambda_L1
 
 `time.derivative_step_s` 是 h。正的距离变化率代表路径增长，对应负的本程序多普勒。`carrier_range_rate_mps` 与代码伪距的时间导数不必完全相同，电离层符号及独立载波频移可以造成差异。
 
-轨迹出发/停止、反射路径有效性改变、星历记录选择切换或线性插值节点附近，中心差分可能跨过分段边界，应检查步长敏感性；它不是所有时刻的严格解析瞬时速度。
+轨迹出发、拐点、停止、反射路径有效性改变、星历记录选择切换或线性插值节点附近，中心差分可能跨过分段边界，应检查步长敏感性；它不是所有时刻的严格解析瞬时速度。
 
 `observations` 中的噪声是按参数生成的观测估计误差模型：
 
@@ -247,8 +247,8 @@ GPS satellite S_i → outdoor receiving antenna A → cable/processing equipment
 - The WGS84 origin is converted to ECEF, then the origin's ENU rotation matrix converts between local and global coordinates. The factory is treated as a Euclidean rectangular cuboid on the scale of tens of meters.
 - `time.gps_week` is the full GPS week, and `gps_sow` is seconds of GPS week, both in GPST. Input is not UTC; the program does not automatically convert user-supplied UTC dates or leap seconds.
 - `time_s` is receiver-clock time from the configured initial epoch. The approximate physical time used for trajectory and propagation is `physical = time_s - receiver_clock_m(time_s)/c`. This first-order clock mapping is suitable for small clock bias and relative drift; it is not a general-relativistic clock integration model.
-- The user follows a single straight path and remains stationary before departure and after arrival. With `acceleration_time_s=0`, velocity changes instantaneously at departure and stopping. A positive value gives constant-acceleration startup, constant-speed travel and constant-deceleration stopping: velocity is continuous but acceleration remains discontinuous at segment boundaries.
-- `observation_interval_s` defines the regular time grid; times corresponding to path points every `trajectory_distance_step_m` are also inserted. The merged grid is not strictly equally spaced. A stationary endpoint time and a path point may both occur.
+- The receiver follows straight segments through the start, intermediate waypoints and end in order. The sum of the segment lengths gives the total path length. The motion profile determines cumulative distance, which gives the position on each segment. The receiver remains stationary before departure and after arrival. With `acceleration_time_s=0`, it starts and stops instantaneously. A positive value gives constant acceleration at departure, a constant-speed phase and constant deceleration at arrival. Position and speed are continuous at intermediate turns, and the velocity direction changes instantaneously. The model uses sharp turns without a pause.
+- `observation_interval_s` defines the regular time grid. The simulator adds samples spaced by `trajectory_distance_step_m` along the cumulative path length and the arrival time at each intermediate waypoint. The merged grid may have uneven intervals.
 
 The default user speed is 80/3.6 m/s, and unaccelerated motion across 30 m takes 1.35 s. This is a simulation truth setting, not a claim about receiver output rate or tracking capability.
 
@@ -371,7 +371,7 @@ D(t) = -range_rate(t)/lambda_L1
 
 `time.derivative_step_s` is h. A positive range rate indicates an increasing path and corresponds to negative Doppler in this program. `carrier_range_rate_mps` need not exactly equal the time derivative of code pseudorange: ionospheric sign and independent carrier frequency shift can make them differ.
 
-Near trajectory departure/stopping, changes in reflection validity, ephemeris-record selection changes, or linear interpolation nodes, central differences can cross piecewise boundaries. Check sensitivity to step size; the result is not a strict analytic instantaneous velocity at all times.
+Near trajectory departure, turns, stopping, changes in reflection validity, ephemeris-record selection changes, or linear interpolation nodes, central differences can cross piecewise boundaries. Check sensitivity to step size; the result is not a strict analytic instantaneous velocity at all times.
 
 Noise in `observations` models observation estimation error using configured parameters:
 
